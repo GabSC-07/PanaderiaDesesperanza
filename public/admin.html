@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="icon.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+    <title>La Desesperanza</title>
+</head>
+
+<header>
+    <center><img src="logo.png" alt="La Desesperanza"></center>
+    <h1><b>¡BIENVENIDO!</b></h1>
+</header>
+
+<body>
+    <center>
+        <table>
+            <tr>
+                <td>
+                    <div class="create">
+                        <label class="titles">Agregar Producto</label>
+                        <br><br><br>
+                        <form id="agregarProductoForm" method="post" class="update">
+                            <label for="id_pan">Nombre del Producto:</label><br>
+                            <input type="text" name="nombre_pan" placeholder="Nombre del pan">
+                            <br><br>
+
+                            <label for="id_pan">Descripción:</label><br>
+                            <input type="text" name="descripcion" placeholder="Descripción">
+                            <br><br>
+
+                            <label for="id_pan">Precio:</label><br>
+                            <input type="text" name="precio" placeholder="Precio">
+                            <br><br>
+
+                            <label for="id_pan">Cantidad:</label><br>
+                            <input type="text" name="cantidad" placeholder="Cantidad disponible">
+                            <br><br><br>
+                            <center><button type="button" id="agregarProductoButton">Agregar Producto</button></center>
+                            <br><br>
+                        </form>
+                    </div>
+                </td>
+
+                <td>
+                    <div class="create">
+                        <label class="titles">Actualizar Producto</label>
+                        <br><br><br>
+                        <form id="actualizarProductoForm" method="post" class="update">
+                            <label for="id_pan">ID del Producto:</label><br>
+                            <input type="number" id="id_pan" name="id_pan" required placeholder="ID del producto">
+                            <br><br>
+                            <label for="nombre_pan">Nombre del Producto:</label><br>
+                            <input type="text" id="nombre_pan" name="nombre_pan" placeholder="Nuevo nombre">
+                            <br><br>
+                            <label for="descripcion">Descripción:</label><br>
+                            <input type="text" id="descripcion" name="descripcion" placeholder="Nueva descripción">
+                            <br><br>
+                            <label for="precio">Precio:</label><br>
+                            <input type="text" id="precio" name="precio" step="0.01" placeholder="Nuevo precio">
+                            <br><br>
+                            <label for="cantidad">Cantidad:</label><br>
+                            <input type="text" id="cantidad" name="cantidad" placeholder="Nueva cantidad">
+                            <br><br>
+                            <center><button type="button" id="actualizarProductoButton">Actualizar Producto</button></center>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </center>
+    <br><br>
+    <center>
+        <table>
+            <tr>
+                <td>
+                    <label class="titles">Inventario de Productos</label><br>
+                    <div id="inventarioContainer">
+                        
+                    </div>
+                    
+                    <!--<button type="button" id="verInventarioButton" class="read">Ver Inventario</button>-->
+                    
+                </td>
+            </tr>
+
+            <tr>
+                <td><br><br><br>
+                    <div class="delete">
+                        <label class="titles">Eliminar Producto</label><br><br>
+                        <form id="borrarProductoForm" method="post">
+                            <input type="text" name="id" placeholder="Ingresa el id del producto">
+                            <button type="button" id="borrarProductoButton">Borrar Producto</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </center>
+
+
+
+    <br><br>
+
+
+</body>
+
+<footer>
+    
+    <div class="fin">
+        <img src="pan-cayendo.gif" width="300" height="200">
+        <img src="pan-girando.gif" width="300" height="200">
+    </div>
+    <br>
+    <p><b>La Desesperanza 2024 S.A de C.V.</b></p>
+</footer>
+
+</html>
