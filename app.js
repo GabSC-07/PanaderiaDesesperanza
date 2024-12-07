@@ -8,8 +8,8 @@ const path = require('path');
 var app = express()
 const db = mysql.createConnection({
     host:'localhost',
-    user:'root',
-    password:'n0m3l0',
+    user:'root',    //
+    password:'GaSe_0c',
     database:'Desesperanza'
 });
     
