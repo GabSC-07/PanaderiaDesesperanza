@@ -1,15 +1,16 @@
 const express = require("express")
+const session = require('express-session');
 const mysql = require("mysql2")
 var bodyParser = require('body-parser')
-const session = require('express-session');
 
 const path = require('path');
 
+// La conexión a la DB
 var app = express()
 const db = mysql.createConnection({
     host:'localhost',
-    user:'root',    //
-    password:'GaSe_0c',
+    user:'root',
+    password:'GaSe_0c',     // GaSe_0c   <-- Mi contraseña xdd (no la quites jaja)
     database:'Desesperanza'
 });
     
@@ -22,85 +23,166 @@ db.connect((err)=>{
 });
 
 app.use(session({
-    secret:'clave_secreta',
-    resave:false,
-    saveUninitialized:true
+    secret: 'clave_secreta',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 3600000 } // 1 hora
 }));
 
+
+// Cosas xd
 app.use(express.urlencoded({extend:true}))
 app.use(bodyParser.json())
 app.use(express.json())
 app.use(express.static(path.join(__dirname,'public')))
+//app.use(express.static('public'))
 
 app.use(bodyParser.urlencoded({
     extended: true
 }))
-//app.use(express.static('public'))
 
-app.post('/login', (req,res)=>{
-    const{username, password}=req.body;
 
-    if(!username || !password){
-        return res.status(400).send('Por favor ingresa usuario y contraseña')
-    }
+/*****         SIGN IN         *****/
+app.post('/signin', (req, res) => {
+    const { nombre_cliente, password_cliente } = req.body;
 
-    const sql = 'SELECT * FROM Administrador WHERE nombre_admin=?';
-    db.query(sql,[username],(err,results)=>{
-        if(err){
-            console.log('Error al conectar', err)
-            return res.status(500).send('Error en el servidor')
+    db.query('SELECT * FROM Cliente WHERE nombre_cliente = ? AND password_cliente = ?', [nombre_cliente, password_cliente], (err, resultados) => {
+        if (err) {
+            console.error('Error al iniciar sesión:', err);
+            return res.status(500).json({ message: 'Error en el servidor.' });
         }
 
-        if (results.length===0) {
-            const sql = 'SELECT * FROM Cliente WHERE nombre_cliente=?';
-            db.query(sql,[username],(err,results)=>{
-                if(err){
-                    console.log('Error al conectar', err)
-                    return res.status(500).send('Error en el servidor')
-                }
-                if (results.length===0) {
-                    return res.status(401).send('Usuario no encontrado')
-                }
-                const user = results[0]
-        
-                if (password===user.password_cliente) {
-                    req.session.userId=user.id;
-                    req.session.username=user.username;
-                    /*if (user.password_admin === '123456') {
-                        res.sendFile(__dirname+'/public/admin.html')
-                    } else {
-                        res.sendFile(__dirname+'/public/cliente.html')
-                    }*/
-                        res.sendFile(__dirname+'/public/cliente.html')
-                        
-                } else {
-                    res.status(401).send('Contraseña ncorrecta');
-                }
-            })
-        } else {
-        const user = results[0]
-
-        if (password===user.password_admin) {
-            req.session.userId=user.id;
-            req.session.username=user.username;
-                res.sendFile(__dirname+'/public/admin.html')
-
-        } else {
-            res.status(401).send('Contraseña Incorrecta');
+        if (resultados.length === 0) {
+            return res.status(401).json({ message: 'Credenciales incorrectas.' });
         }
-    }
-    })
-    
-})
 
+        // Guardar datos del usuario en la sesión
+        req.session.id_cliente = resultados[0].id_cliente;
+        req.session.nombre_cliente = resultados[0].nombre_cliente;
+
+        console.log(req.session); 
+
+        res.json({ message: 'Inicio de sesión exitoso.' });
+    });
+});
+
+/*****         SIGN UP         *****/
+app.post('/signup', (req, res) => {
+    const { username, email, telefono, password } = req.body;
+
+    // Validar los campos
+    if (!username || !password || !email || !telefono) {
+        return res.status(400).send('Por favor completa todos los campos');
+    }
+
+    // Verificar si el usuario ya existe
+    const checkUserQuery = 'SELECT * FROM Cliente WHERE nombre_cliente = ? OR email = ? OR telefono = ?';
+    db.query(checkUserQuery, [username, email, telefono], (err, results) => {
+        if (err) {
+            console.error('Error al verificar usuario:', err);
+            return res.status(500).send('Error en el servidor');
+        }
+
+        if (results.length > 0) {
+            return res.status(409).send('El usuario o el correo ya están registrados');
+        }
+
+        // Insertar el nuevo usuario en la base de datos
+        const insertUserQuery = 'INSERT INTO Cliente (nombre_cliente, email, telefono, password_cliente) VALUES (?, ?, ?, ?)';
+        db.query(insertUserQuery, [username, email, telefono, password], (err, results) => {
+            if (err) {
+                console.error('Error al registrar usuario:', err);
+                return res.status(500).send('Error en el servidor');
+            }
+            res.sendFile(__dirname+'/public/admin.html')
+        });
+    });
+});
+
+/*****         LOG OUT         *****/
 app.get('/logout', (req,res)=>{
     req.session.destroy((err)=>{
         if (err) {
             return res.status(500).send('Error al cerrar sesión');
         }
     })
-    res.send('Sesión cerrada');
+    res.sendFile(__dirname+'/public/index.html')
 })
+
+// Verificar si el usuario está autenticado
+function autenticarUsuario(req, res, next) {
+    if (!req.session.id_cliente) {
+        return res.status(401).json({ message: 'Usuario no autenticado.' });
+    }
+    next();
+}
+
+
+
+/*****         EL CARRITO         *****/
+
+// Mostrar el inventario (si otra vez)
+app.get('/mostrarProductos', (req, res) => {
+    db.query('SELECT * FROM Inventario', (err, resultados) => {
+        if (err) {
+            console.error('Error al cargar los productos:', err);
+            return res.status(500).json({ message: 'Error al cargar los productos.' });
+        }
+
+        const productos = resultados.map(producto => ({
+            id: producto.id_pan,
+            nombre: producto.nombre_pan,
+            precio: producto.precio
+        }));
+
+        res.json(productos);
+    });
+});
+
+// Agregar los productos al carrito
+app.post('agregarProductos', autenticarUsuario, (req, res) => {
+    const userId = req.session.id_cliente;
+    const { productoId } = req.body;
+
+    db.query('INSERT INTO Carrito (id_cliente, id_pan) VALUES (?, ?)', [userId, productoId], (err) => {
+        if (err) {
+            console.error('Error al agregar al carrito:', err);
+            return res.status(500).json({ message: 'Error al agregar al carrito.' });
+        }
+
+        res.json({ message: 'Producto agregado al carrito.' });
+    });
+});
+
+// Ruta para obtener el carrito del usuario autenticado
+app.get('/carrito', autenticarUsuario, (req, res) => {
+    const userId = req.session.userId;
+
+    db.query('SELECT * FROM Carrito INNER JOIN Inventario ON Carrito.producto_id = Inventario.id WHERE Carrito.usuario_id = ?', [userId], (err, resultados) => {
+        if (err) {
+            console.error('Error al cargar el carrito:', err);
+            return res.status(500).json({ message: 'Error al cargar el carrito.' });
+        }
+
+        res.json(resultados);
+    });
+});
+
+// Ruta para procesar compra
+app.post('/carrito/comprar', autenticarUsuario, (req, res) => {
+    const userId = req.session.userId;
+
+    // Procesar compra (validar fondos, calcular total, etc.)
+    db.query('DELETE FROM Carrito WHERE usuario_id = ?', [userId], (err) => {
+        if (err) {
+            console.error('Error al procesar la compra:', err);
+            return res.status(500).json({ message: 'Error al procesar la compra.' });
+        }
+
+        res.json({ message: 'Compra realizada con éxito.' });
+    });
+});
+
 
 
 

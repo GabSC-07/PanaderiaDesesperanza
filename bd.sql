@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS Factura_Cliente;
 DROP TABLE IF EXISTS Direccion_Cliente;
 DROP TABLE IF EXISTS Cliente;
 DROP TABLE IF EXISTS Direccion;
+DROP TABLE IF EXISTS Carrito;
 DROP TABLE IF EXISTS Factura;
 DROP TABLE IF EXISTS Pedido;
 
@@ -21,13 +22,19 @@ CREATE TABLE Inventario (
 CREATE TABLE Cliente (
 	id_cliente INT NOT NULL AUTO_INCREMENT,
     nombre_cliente VARCHAR(50) NOT NULL,
-    apellido_materno VARCHAR(50) NOT NULL,
-    apellido_paterno VARCHAR(50) NOT NULL,
-    sexo VARCHAR(10) NOT NULL,
     email VARCHAR(50),
     telefono VARCHAR(15),
 	password_cliente VARCHAR(25) NOT NULL,
+    fondos DECIMAL(10,2) DEFAULT 0,
     PRIMARY KEY (id_cliente)
+);
+
+CREATE TABLE Carrito (
+    id_carrito INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    id_pan INT NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente),
+    FOREIGN KEY (id_pan) REFERENCES Inventario(id_pan)
 );
 
 CREATE TABLE Administrador (
@@ -92,7 +99,7 @@ INSERT INTO Inventario (nombre_pan, descripcion, precio, cantidad) VALUES ('Alta
 
 SELECT * FROM Inventario;
 
-INSERT INTO Cliente (nombre_cliente, apellido_materno, appelido_paterno, sexo, email, telefono, password_cliente) VALUES ('Gabriel', 'Serratos', 'Cortés', 'Másculino', 'serratosgab75@gmail.com', '5520329207', '123456');
+INSERT INTO Cliente (nombre_cliente, apellido_materno, apellido_paterno, sexo, email, telefono, password_cliente) VALUES ('Gabriel', 'Serratos', 'Cortés', 'Másculino', 'serratosgab75@gmail.com', '5520329207', '123456');
 SELECT * FROM Cliente;
 
 INSERT INTO Administrador (nombre_admin, password_admin) VALUES ('A', '1234');
