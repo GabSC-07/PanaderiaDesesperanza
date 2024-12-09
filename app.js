@@ -140,7 +140,7 @@ app.get('/mostrarProductos', (req, res) => {
 });
 
 // Agregar los productos al carrito
-app.post('agregarProductos', autenticarUsuario, (req, res) => {
+app.post('/agregarProductos', autenticarUsuario, (req, res) => {
     const userId = req.session.id_cliente;
     const { productoId } = req.body;
 
@@ -154,11 +154,11 @@ app.post('agregarProductos', autenticarUsuario, (req, res) => {
     });
 });
 
-// Ruta para obtener el carrito del usuario autenticado
-app.get('/carrito', autenticarUsuario, (req, res) => {
-    const userId = req.session.userId;
+// Mostrar el carrito
+app.get('/mostrarCarrito', autenticarUsuario, (req, res) => {
+    const userId = req.session.id_cliente;
 
-    db.query('SELECT * FROM Carrito INNER JOIN Inventario ON Carrito.producto_id = Inventario.id WHERE Carrito.usuario_id = ?', [userId], (err, resultados) => {
+    db.query('SELECT * FROM Carrito INNER JOIN Inventario ON Carrito.id_pan = Inventario.id_pan WHERE Carrito.id_cliente = ?', [userId], (err, resultados) => {
         if (err) {
             console.error('Error al cargar el carrito:', err);
             return res.status(500).json({ message: 'Error al cargar el carrito.' });
@@ -168,19 +168,131 @@ app.get('/carrito', autenticarUsuario, (req, res) => {
     });
 });
 
-// Ruta para procesar compra
-app.post('/carrito/comprar', autenticarUsuario, (req, res) => {
-    const userId = req.session.userId;
+// Eliminar producto del carrito
+app.delete('/eliminarProducto', autenticarUsuario, (req, res) => {
+    const { id_carrito } = req.body;
 
-    // Procesar compra (validar fondos, calcular total, etc.)
-    db.query('DELETE FROM Carrito WHERE usuario_id = ?', [userId], (err) => {
+    db.query('DELETE FROM Carrito WHERE id_carrito = ?', [id_carrito], (err, resultado) => {
         if (err) {
-            console.error('Error al procesar la compra:', err);
-            return res.status(500).json({ message: 'Error al procesar la compra.' });
+            console.error('Error al eliminar del carrito:', err);
+            return res.status(500).json({ message: 'Error al eliminar del carrito.' });
         }
 
-        res.json({ message: 'Compra realizada con éxito.' });
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({ message: 'Producto no encontrado en el carrito.' });
+        }
+
+        res.json({ message: 'Producto eliminado del carrito.' });
     });
+});
+
+
+
+/*****         COMPRAS Y DINERO         *****/
+
+// Consultar el dinero del usuario
+app.get('/consultarDinero', autenticarUsuario, (req, res) => {
+    const userId = req.session.id_cliente;
+
+    db.query('SELECT fondos FROM Cliente WHERE id_cliente = ?', [userId], (err, resultados) => {
+        if (err || resultados.length === 0) {
+            console.error('Error al consultar los fondos:', err);
+            return res.status(500).json({ message: 'Error al consultar los fondos.' });
+        }
+        res.json({ fondos: resultados[0].fondos });
+    });
+});
+
+// Agregar dinero
+app.post('/usuarios/fondos', autenticarUsuario, (req, res) => {
+    const userId = req.session.id_cliente; // Usuario autenticado
+    const { monto } = req.body;
+
+    // Validar el monto
+    if (monto <= 0 || monto > 999999999999) {
+        return res.status(400).json({ message: 'Monto inválido.' });
+    }
+
+    // Consultar fondos actuales
+    db.query('SELECT fondos FROM Cliente WHERE id_cliente = ?', [userId], (err, resultados) => {
+        if (err || resultados.length === 0) {
+            console.error('Error al consultar los fondos actuales:', err);
+            return res.status(500).json({ message: 'Error al recargar fondos.' });
+        }
+
+        const fondosActuales = parseFloat(resultados[0].fondos);
+        const nuevosFondos = fondosActuales + parseFloat(monto);
+
+        // Actualizar fondos en la base de datos
+        db.query('UPDATE Cliente  SET fondos = ? WHERE id_cliente = ?', [nuevosFondos, userId], (err) => {
+            if (err) {
+                console.error('Error al actualizar los fondos:', err);
+                return res.status(500).json({ message: 'Error al recargar fondos.' });
+            }
+
+            // Confirmar la recarga
+            res.json({ message: 'Fondos recargados con éxito.', nuevosFondos });
+        });
+    });
+});
+
+// Comprar los productos del carrito
+app.post('/carrito/comprar', autenticarUsuario, (req, res) => {
+    const userId = req.session.id_cliente;
+
+    // Obtener los productos en el carrito
+    db.query(
+        'SELECT Carrito.id_pan, Inventario.precio FROM Carrito INNER JOIN Inventario ON Carrito.id_pan = Inventario.id_pan WHERE Carrito.id_cliente = ?',
+        [userId],
+        (err, productos) => {
+            if (err) {
+                console.error('Error al obtener los productos del carrito:', err);
+                return res.status(500).json({ message: 'Error al procesar la compra.' });
+            }
+
+            if (productos.length === 0) {
+                return res.status(400).json({ message: 'El carrito está vacío.' });
+            }
+
+            // Calcular el total
+            const total = productos.reduce((acc, producto) => acc + producto.precio, 0);
+
+            // Validar fondos del usuario
+            db.query('SELECT fondos FROM Cliente WHERE id_cliente = ?', [userId], (err, resultados) => {
+                if (err || resultados.length === 0) {
+                    console.error('Error al obtener fondos del usuario:', err);
+                    return res.status(500).json({ message: 'Error al procesar la compra.' });
+                }
+
+                const fondos = resultados[0].fondos;
+
+                if (fondos < total) {
+                    return res.status(400).json({ message: 'Fondos insuficientes.' });
+                }
+
+                // Actualizar fondos y vaciar el carrito
+                db.query(
+                    'UPDATE Cliente SET fondos = ? WHERE id_cliente = ?',
+                    [fondos - total, userId],
+                    (err) => {
+                        if (err) {
+                            console.error('Error al actualizar los fondos:', err);
+                            return res.status(500).json({ message: 'Error al procesar la compra.' });
+                        }
+
+                        db.query('DELETE FROM Carrito WHERE id_cliente = ?', [userId], (err) => {
+                            if (err) {
+                                console.error('Error al vaciar el carrito:', err);
+                                return res.status(500).json({ message: 'Error al procesar la compra.' });
+                            }
+
+                            res.json({ message: 'Compra realizada con éxito.' });
+                        });
+                    }
+                );
+            });
+        }
+    );
 });
 
 

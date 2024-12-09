@@ -105,3 +105,5 @@ SELECT * FROM Cliente;
 INSERT INTO Administrador (nombre_admin, password_admin) VALUES ('A', '1234');
 SELECT * FROM Administrador;
 
+SELECT * FROM Carrito;
+
