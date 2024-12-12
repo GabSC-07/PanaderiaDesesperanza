@@ -102,8 +102,13 @@ SELECT * FROM Inventario;
 INSERT INTO Cliente (nombre_cliente, apellido_materno, apellido_paterno, sexo, email, telefono, password_cliente) VALUES ('Gabriel', 'Serratos', 'Cortés', 'Másculino', 'serratosgab75@gmail.com', '5520329207', '123456');
 SELECT * FROM Cliente;
 
+
+UPDATE Cliente SET fondos = fondos + 100 WHERE id_cliente = 1;
+
+
 INSERT INTO Administrador (nombre_admin, password_admin) VALUES ('A', '1234');
 SELECT * FROM Administrador;
 
 SELECT * FROM Carrito;
+DELETE FROM Carrito WHERE id_cliente = 1 AND id_pan = 1;
 

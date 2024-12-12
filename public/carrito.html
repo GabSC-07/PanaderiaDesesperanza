@@ -107,14 +107,48 @@
 
 
         async function comprarCarrito() {
-            const response = await fetch(`/carrito/comprar`, {
-                method: "POST"
-            });
+            try {
+                const response = await fetch(`/carrito/comprar`, { method: "POST" });
+                const data = await response.json();
 
-            const data = await response.json();
-            alert(data.message);
-            if (response.ok) cargarCarrito(); consultarFondos();
+                if (response.ok) {
+                    alert(data.message);
+
+                    // Generar ticket de compra
+                    if (data.ticket) {
+                        const ticket = data.ticket;
+                        let ticketHTML = `
+                    <h2>${ticket.negocio}</h2>
+                    <p><strong>Fecha:</strong> ${ticket.fecha}</p>
+                    <p><strong>Número de Venta:</strong> ${ticket.idCompra}</p>
+                    <h3>Productos Comprados:</h3>
+                    <ul>
+                `;
+
+                        ticket.productos.forEach((producto) => {
+                            ticketHTML += `<li>${producto.nombre_pan} x${producto.cantidad}</li>`;
+                        });
+
+                        ticketHTML += `</ul><p><strong>Total:</strong> $${ticket.total} pesos</p>`;
+
+                        // Mostrar el ticket
+                        const ventanaTicket = window.open("", "_blank");
+                        ventanaTicket.document.write(ticketHTML);
+                        ventanaTicket.document.close();
+                    }
+
+                    cargarCarrito(); // Actualizar carrito
+                    consultarFondos(); // Actualizar fondos
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error("Error al realizar la compra:", error);
+                alert("No se pudo completar la compra.");
+            }
         }
+
+
 
 
 

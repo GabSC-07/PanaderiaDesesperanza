@@ -8,14 +8,14 @@ const path = require('path');
 // La conexión a la DB
 var app = express()
 const db = mysql.createConnection({
-    host:'localhost',
-    user:'root',
-    password:'GaSe_0c',     // GaSe_0c   <-- Mi contraseña xdd (no la quites jaja)
-    database:'Desesperanza'
+    host: 'localhost',
+    user: 'root',
+    password: 'GaSe_0c',     // GaSe_0c   <-- Mi contraseña xdd (no la quites jaja)
+    database: 'Desesperanza'
 });
-    
-db.connect((err)=>{
-    if(err){
+
+db.connect((err) => {
+    if (err) {
         console.log('Error al conectar', err)
         return;
     }
@@ -31,10 +31,10 @@ app.use(session({
 
 
 // Cosas xd
-app.use(express.urlencoded({extend:true}))
+app.use(express.urlencoded({ extend: true }))
 app.use(bodyParser.json())
 app.use(express.json())
-app.use(express.static(path.join(__dirname,'public')))
+app.use(express.static(path.join(__dirname, 'public')))
 //app.use(express.static('public'))
 
 app.use(bodyParser.urlencoded({
@@ -53,16 +53,35 @@ app.post('/signin', (req, res) => {
         }
 
         if (resultados.length === 0) {
-            return res.status(401).json({ message: 'Credenciales incorrectas.' });
-        }
+            const { nombre_cliente, password_cliente } = req.body;
 
+            db.query('SELECT * FROM Administrador WHERE nombre_admin = ? AND password_admin = ?', [nombre_cliente, password_cliente], (err, resultados) => {
+                if (err) {
+                    console.error('Error al iniciar sesión:', err);
+                    return res.status(500).json({ message: 'Error en el servidor.' });
+                }
+
+                if (resultados.length === 0) {
+                    return res.status(401).json({ message: 'Credenciales incorrectas.' });
+                }
+
+                // Guardar datos del usuario en la sesión
+                req.session.id_cliente = resultados[0].id_admin;
+                req.session.nombre_cliente = resultados[0].nombre_admin;
+
+                console.log(req.session);
+                req.session.role = "admin"; // Agregar el rol de admin
+                res.json({ message: 'Inicio de sesión exitoso.', role: 'admin' });
+            }); 
+        } else {
+ 
         // Guardar datos del usuario en la sesión
         req.session.id_cliente = resultados[0].id_cliente;
         req.session.nombre_cliente = resultados[0].nombre_cliente;
 
-        console.log(req.session); 
-
-        res.json({ message: 'Inicio de sesión exitoso.' });
+        console.log(req.session);
+        req.session.role = "cliente"; // Agregar el rol de cliente
+        res.json({ message: 'Inicio de sesión exitoso.', role: 'cliente' });}
     });
 });
 
@@ -94,19 +113,19 @@ app.post('/signup', (req, res) => {
                 console.error('Error al registrar usuario:', err);
                 return res.status(500).send('Error en el servidor');
             }
-            res.sendFile(__dirname+'/public/admin.html')
+            res.sendFile(__dirname + '/public/cliente.html')
         });
     });
 });
 
 /*****         LOG OUT         *****/
-app.get('/logout', (req,res)=>{
-    req.session.destroy((err)=>{
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
         if (err) {
             return res.status(500).send('Error al cerrar sesión');
         }
     })
-    res.sendFile(__dirname+'/public/index.html')
+    res.sendFile(__dirname + '/public/index.html')
 })
 
 // Verificar si el usuario está autenticado
@@ -144,13 +163,26 @@ app.post('/agregarProductos', autenticarUsuario, (req, res) => {
     const userId = req.session.id_cliente;
     const { productoId } = req.body;
 
-    db.query('INSERT INTO Carrito (id_cliente, id_pan) VALUES (?, ?)', [userId, productoId], (err) => {
+    // Verificar si hay stock disponible
+    db.query('SELECT cantidad FROM Inventario WHERE id_pan = ?', [productoId], (err, resultados) => {
         if (err) {
-            console.error('Error al agregar al carrito:', err);
-            return res.status(500).json({ message: 'Error al agregar al carrito.' });
+            console.error('Error al verificar el stock:', err);
+            return res.status(500).json({ message: 'Error al verificar el stock.' });
         }
 
-        res.json({ message: 'Producto agregado al carrito.' });
+        if (resultados.length === 0 || resultados[0].cantidad <= 0) {
+            return res.status(400).json({ message: 'Producto agotado. No se puede agregar al carrito.' });
+        }
+
+        // Si hay stock, agregar al carrito
+        db.query('INSERT INTO Carrito (id_cliente, id_pan) VALUES (?, ?)', [userId, productoId], (err) => {
+            if (err) {
+                console.error('Error al agregar al carrito:', err);
+                return res.status(500).json({ message: 'Error al agregar al carrito.' });
+            }
+
+            res.json({ message: 'Producto agregado al carrito.' });
+        });
     });
 });
 
@@ -237,63 +269,141 @@ app.post('/usuarios/fondos', autenticarUsuario, (req, res) => {
 });
 
 // Comprar los productos del carrito
-app.post('/carrito/comprar', autenticarUsuario, (req, res) => {
-    const userId = req.session.id_cliente;
+app.post('/carrito/comprar', async (req, res) => {
+    try {
+        const idCliente = req.session.id_cliente;
+        if (!idCliente) {
+            return res.status(400).json({ message: "Cliente no identificado." });
+        }
 
-    // Obtener los productos en el carrito
-    db.query(
-        'SELECT Carrito.id_pan, Inventario.precio FROM Carrito INNER JOIN Inventario ON Carrito.id_pan = Inventario.id_pan WHERE Carrito.id_cliente = ?',
-        [userId],
-        (err, productos) => {
+        db.query('SELECT SUM(I.precio) AS total FROM Carrito C INNER JOIN Inventario I ON C.id_pan = I.id_pan WHERE C.id_cliente = ?', [idCliente], (err, resultados) => {
             if (err) {
-                console.error('Error al obtener los productos del carrito:', err);
-                return res.status(500).json({ message: 'Error al procesar la compra.' });
+                console.error('Error al calcular el total del carrito:', err);
+                return res.status(500).json({ message: "Error interno del servidor." });
             }
 
-            if (productos.length === 0) {
-                return res.status(400).json({ message: 'El carrito está vacío.' });
+            const total = parseFloat(resultados[0]?.total || 0);
+            if (total <= 0) {
+                return res.status(400).json({ message: "El carrito está vacío o el total es inválido." });
             }
 
-            // Calcular el total
-            const total = productos.reduce((acc, producto) => acc + producto.precio, 0);
-
-            // Validar fondos del usuario
-            db.query('SELECT fondos FROM Cliente WHERE id_cliente = ?', [userId], (err, resultados) => {
-                if (err || resultados.length === 0) {
-                    console.error('Error al obtener fondos del usuario:', err);
-                    return res.status(500).json({ message: 'Error al procesar la compra.' });
+            db.query('SELECT fondos FROM Cliente WHERE id_cliente = ?', [idCliente], (err, resultadosCliente) => {
+                if (err || resultadosCliente.length === 0) {
+                    console.error('Error al consultar los fondos del cliente:', err);
+                    return res.status(500).json({ message: "Error al consultar los fondos." });
                 }
 
-                const fondos = resultados[0].fondos;
-
-                if (fondos < total) {
-                    return res.status(400).json({ message: 'Fondos insuficientes.' });
+                const fondosActuales = parseFloat(resultadosCliente[0].fondos);
+                if (fondosActuales < total) {
+                    return res.status(400).json({ message: "Fondos insuficientes." });
                 }
 
-                // Actualizar fondos y vaciar el carrito
-                db.query(
-                    'UPDATE Cliente SET fondos = ? WHERE id_cliente = ?',
-                    [fondos - total, userId],
-                    (err) => {
+                const nuevosFondos = fondosActuales - total;
+
+                db.beginTransaction((err) => {
+                    if (err) {
+                        console.error('Error al iniciar la transacción:', err);
+                        return res.status(500).json({ message: "Error interno del servidor." });
+                    }
+
+                    // Actualizar fondos
+                    db.query('UPDATE Cliente SET fondos = ? WHERE id_cliente = ?', [nuevosFondos, idCliente], (err) => {
                         if (err) {
-                            console.error('Error al actualizar los fondos:', err);
-                            return res.status(500).json({ message: 'Error al procesar la compra.' });
+                            return db.rollback(() => {
+                                console.error('Error al actualizar fondos:', err);
+                                res.status(500).json({ message: "Error al actualizar fondos." });
+                            });
                         }
 
-                        db.query('DELETE FROM Carrito WHERE id_cliente = ?', [userId], (err) => {
+                        // Registrar la compra
+                        db.query('INSERT INTO HistorialCompras (id_cliente, total) VALUES (?, ?)', [idCliente, total], (err, resultado) => {
                             if (err) {
-                                console.error('Error al vaciar el carrito:', err);
-                                return res.status(500).json({ message: 'Error al procesar la compra.' });
+                                return db.rollback(() => {
+                                    console.error('Error al registrar la compra:', err);
+                                    res.status(500).json({ message: "Error al registrar la compra." });
+                                });
                             }
 
-                            res.json({ message: 'Compra realizada con éxito.' });
+                            const idCompra = resultado.insertId;
+
+                            // Obtener productos del carrito
+                            db.query('SELECT I.nombre_pan, COUNT(C.id_pan) AS cantidad FROM Carrito C INNER JOIN Inventario I ON C.id_pan = I.id_pan WHERE C.id_cliente = ? GROUP BY C.id_pan', [idCliente], (err, productos) => {
+                                if (err) {
+                                    return db.rollback(() => {
+                                        console.error('Error al obtener productos del carrito:', err);
+                                        res.status(500).json({ message: "Error al procesar la compra." });
+                                    });
+                                }
+
+                                // Limpiar el carrito
+                                db.query('DELETE FROM Carrito WHERE id_cliente = ?', [idCliente], (err) => {
+                                    if (err) {
+                                        return db.rollback(() => {
+                                            console.error('Error al limpiar el carrito:', err);
+                                            res.status(500).json({ message: "Error al limpiar el carrito." });
+                                        });
+                                    }
+
+                                    db.commit((err) => {
+                                        if (err) {
+                                            return db.rollback(() => {
+                                                console.error('Error al confirmar la transacción:', err);
+                                                res.status(500).json({ message: "Error interno del servidor." });
+                                            });
+                                        }
+
+                                        // Devuelve datos para el ticket
+                                        res.json({
+                                            message: "Compra realizada con éxito.",
+                                            ticket: {
+                                                negocio: "Panadería La Desesperanza",
+                                                fecha: new Date().toLocaleString(),
+                                                productos,
+                                                total,
+                                                idCompra
+                                            }
+                                        });
+                                    });
+                                });
+                            });
                         });
-                    }
-                );
+                    });
+                });
             });
+        });
+    } catch (error) {
+        console.error('Error al realizar la compra:', error);
+        res.status(500).json({ message: "Error interno del servidor." });
+    }
+});
+
+
+app.get('/admin/historial-compras', (req, res) => {
+    const { fechaInicio, fechaFin } = req.query;
+
+    if (!fechaInicio || !fechaFin) {
+        return res.status(400).json({ message: "Debe proporcionar las fechas de inicio y fin." });
+    }
+
+    db.query(
+        'SELECT H.id_compra, H.fecha_compra, H.total, C.nombre_cliente FROM HistorialCompras H INNER JOIN Cliente C ON H.id_cliente = C.id_cliente WHERE H.fecha_compra BETWEEN ? AND ? ORDER BY H.fecha_compra DESC',
+        [fechaInicio, fechaFin],
+        (err, resultados) => {
+            if (err) {
+                console.error('Error al consultar el historial de compras:', err);
+                return res.status(500).json({ message: "Error interno del servidor." });
+            }
+
+            res.json(resultados);
         }
     );
 });
+
+
+
+
+
+
 
 
 
@@ -317,7 +427,7 @@ app.post('/agregarProducto', (req, res) => {
                 descripcion = 'Sin descripción';
             }
             return res.json({ message: "Producto agregado correctamente", producto: { id: respuesta.insertId, nombre_pan, descripcion, precio, cantidad } });
-            
+
         }
     );
 });
@@ -356,7 +466,7 @@ app.get('/verInventario', (req, res) => {
 
 // Borrar producto
 app.post('/borrarProducto', (req, res) => {
-    const id = req.body.id; 
+    const id = req.body.id;
     db.query('DELETE FROM Inventario WHERE id_pan = ?', [id], (err, resultado, fields) => {
         if (err) {
             console.error('Error al borrar el producto:', err);
@@ -417,6 +527,6 @@ app.post('/actualizarProducto', (req, res) => {
 
 
 
-app.listen(3001, ()=>{
+app.listen(3001, () => {
     console.log(`Servidor corriendo en http://localhost:${3001}`)
 })

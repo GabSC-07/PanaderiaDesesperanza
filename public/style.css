@@ -10,13 +10,11 @@ header{
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     font-size: 25PX;
     text-align: center;
-    
     padding-bottom: 5px;
 }
 
 body{
-    background-color: #a161dc;
-
+    background-color: #6165dc;
 }
 
 .create{
@@ -91,14 +89,46 @@ th, td {
 }
 
 th {
-    background-color: #f4b41a;
+    background-color: #f0160a;
     font-weight: bold;
 }
 
 .dos {
-    background-color: beige;
+    background-color: rgb(209, 210, 128);
 }
 
 .fin{
     border-image-width: 10px;
+}
+.Registro_form{
+    text-align: center;
+    font-weight: bold;
+}
+
+.form-label{
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: x-large;
+}
+
+.form-control{
+    border-radius: 40px;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 25PX;
+}
+
+button{
+    border-radius: 30px;
+    border-width: 5px;
+    font-size: 25px;
+    background-color: #6165dc;
+}
+
+.form-iniciosesion{
+    text-align: center;
+    font-weight: bold;
+}
+
+.form-cerrarSesion{
+    text-align: center;
+    font-weight: bold;
 }

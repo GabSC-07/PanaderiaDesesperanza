@@ -3,10 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="images/icon.png">
     <title>Iniciar Sesión</title>
     <!-- Enlace a Bootstrap CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
+
+<header>
+    <center><img src="images/logo.png" alt="La Desesperanza"></center>
+    <h1><b>¡¡Inicia sesión!!</b></h1>
+</header>
+
 <body class="bg-light">
 
     <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
@@ -58,10 +65,14 @@
 
             const data = await response.json();
             if (response.ok) {
-                alert(data.message);
-                window.location.href = 'cliente.html';
+                alert(data.message); // Mensaje de éxito
+                if (data.role === "admin") {
+                    window.location.href = 'admin.html'; // Redirigir a la página de admin
+                } else if (data.role === "cliente") {
+                    window.location.href = 'cliente.html'; // Redirigir a la página del cliente
+                }
             } else {
-                alert(data.message);
+                alert(data.message); // Mostrar mensaje de error
             }
         });
     </script>

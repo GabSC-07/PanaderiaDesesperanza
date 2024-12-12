@@ -4,121 +4,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="images/icon.png">
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
-    <title>La Desesperanza</title>
+    <title>Historial de Compras</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        form input {
+            margin: 0 10px;
+            padding: 5px;
+        }
+
+        form button {
+            padding: 5px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
 </head>
 
-<header>
-    <center><img src="images/logo.png" alt="La Desesperanza"></center>
-    <h1><b>¡BIENVENIDO!</b></h1>
-    <form action="/logout" method="get">
-        <button type="submit" class="btn btn-primary w-100">Cerrar sesión</button>
-    </form>
-</header>
-
 <body>
-    <center>
-        <table>
+    <h1>Historial de Compras</h1>
+
+    <form id="formHistorial">
+        <label for="fechaInicio">Fecha de Inicio:</label>
+        <input type="date" id="fechaInicio" required>
+
+        <label for="fechaFin">Fecha de Fin:</label>
+        <input type="date" id="fechaFin" required>
+
+        <button type="submit">Consultar</button>
+    </form>
+
+    <table>
+        <thead>
             <tr>
-                <td>
-                    <div class="create">
-                        <label class="titles">Agregar Producto</label>
-                        <br><br><br>
-                        <form id="agregarProductoForm" method="post" class="update">
-                            <label for="id_pan">Nombre del Producto:</label><br>
-                            <input type="text" name="nombre_pan" placeholder="Nombre del pan">
-                            <br><br>
-
-                            <label for="id_pan">Descripción:</label><br>
-                            <input type="text" name="descripcion" placeholder="Descripción">
-                            <br><br>
-
-                            <label for="id_pan">Precio:</label><br>
-                            <input type="text" name="precio" placeholder="Precio">
-                            <br><br>
-
-                            <label for="id_pan">Cantidad:</label><br>
-                            <input type="text" name="cantidad" placeholder="Cantidad disponible">
-                            <br><br><br>
-                            <center><button type="button" id="agregarProductoButton">Agregar Producto</button></center>
-                            <br><br>
-                        </form>
-                    </div>
-                </td>
-
-                <td>
-                    <div class="create">
-                        <label class="titles">Actualizar Producto</label>
-                        <br><br><br>
-                        <form id="actualizarProductoForm" method="post" class="update">
-                            <label for="id_pan">ID del Producto:</label><br>
-                            <input type="number" id="id_pan" name="id_pan" required placeholder="ID del producto">
-                            <br><br>
-                            <label for="nombre_pan">Nombre del Producto:</label><br>
-                            <input type="text" id="nombre_pan" name="nombre_pan" placeholder="Nuevo nombre">
-                            <br><br>
-                            <label for="descripcion">Descripción:</label><br>
-                            <input type="text" id="descripcion" name="descripcion" placeholder="Nueva descripción">
-                            <br><br>
-                            <label for="precio">Precio:</label><br>
-                            <input type="text" id="precio" name="precio" step="0.01" placeholder="Nuevo precio">
-                            <br><br>
-                            <label for="cantidad">Cantidad:</label><br>
-                            <input type="text" id="cantidad" name="cantidad" placeholder="Nueva cantidad">
-                            <br><br>
-                            <center><button type="button" id="actualizarProductoButton">Actualizar Producto</button></center>
-                        </form>
-                    </div>
-                </td>
+                <th>ID Compra</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Total</th>
             </tr>
-        </table>
-    </center>
-    <br><br>
-    <center>
-        <table>
+        </thead>
+        <tbody id="tablaHistorial">
             <tr>
-                <td>
-                    <label class="titles">Inventario de Productos</label><br>
-                    <div id="inventarioContainer">
-                        
-                    </div>
-                    
-                    <!--<button type="button" id="verInventarioButton" class="read">Ver Inventario</button>-->
-                    
-                </td>
+                <td colspan="4" style="text-align: center;">No hay datos para mostrar</td>
             </tr>
+        </tbody>
+    </table>
 
-            <tr>
-                <td><br><br><br>
-                    <div class="delete">
-                        <label class="titles">Eliminar Producto</label><br><br>
-                        <form id="borrarProductoForm" method="post">
-                            <input type="text" name="id" placeholder="Ingresa el id del producto">
-                            <button type="button" id="borrarProductoButton">Borrar Producto</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </center>
+    <script>
+        document.getElementById('formHistorial').addEventListener('submit', async function (event) {
+            event.preventDefault(); // Evita que el formulario recargue la página
 
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
 
+            if (!fechaInicio || !fechaFin) {
+                alert('Por favor, selecciona ambas fechas.');
+                return;
+            }
 
-    <br><br>
+            try {
+                const response = await fetch(`/admin/historial-compras?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+                const historial = await response.json();
 
+                const tablaHistorial = document.getElementById('tablaHistorial');
+                tablaHistorial.innerHTML = '';
 
+                if (historial.length === 0) {
+                    tablaHistorial.innerHTML = '<tr><td colspan="4" style="text-align: center;">No se encontraron resultados</td></tr>';
+                } else {
+                    historial.forEach((compra) => {
+                        tablaHistorial.innerHTML += `
+                            <tr>
+                                <td>${compra.id_compra}</td>
+                                <td>${compra.nombre_cliente}</td>
+                                <td>${new Date(compra.fecha_compra).toLocaleString()}</td>
+                                <td>${compra.total} pesos</td>
+                            </tr>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error al consultar el historial:', error);
+                alert('Hubo un problema al consultar el historial.');
+            }
+        });
+    </script>
 </body>
-
-<footer>
-    
-    <div class="fin">
-        <img src="images/pan-cayendo.gif" width="300" height="200">
-        <img src="images/pan-girando.gif" width="300" height="200">
-    </div>
-    <br>
-    <p><b>La Desesperanza 2024 S.A de C.V.</b></p>
-</footer>
 
 </html>
