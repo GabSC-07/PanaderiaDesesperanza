@@ -113,7 +113,7 @@ app.post('/signup', (req, res) => {
                 console.error('Error al registrar usuario:', err);
                 return res.status(500).send('Error en el servidor');
             }
-            res.sendFile(__dirname + '/public/cliente.html')
+            res.sendFile(__dirname + '/public/signin.html')
         });
     });
 });

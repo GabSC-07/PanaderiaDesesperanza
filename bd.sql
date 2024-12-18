@@ -44,6 +44,23 @@ CREATE TABLE Administrador (
     PRIMARY KEY (id_admin)
 );
 
+CREATE TABLE HistorialCompras (
+    id_compra INT AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    fecha_compra DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (id_cliente) REFERENCES Cliente(id_cliente)
+);
+
+CREATE TABLE DetalleCompras (
+    id_detalle INT AUTO_INCREMENT PRIMARY KEY,
+    id_compra INT NOT NULL,
+    id_pan INT NOT NULL,
+    cantidad INT NOT NULL,
+    FOREIGN KEY (id_compra) REFERENCES HistorialCompras(id_compra),
+    FOREIGN KEY (id_pan) REFERENCES Inventario(id_pan)
+);
+
 CREATE TABLE Direccion (
 	id_direccion INT NOT NULL AUTO_INCREMENT,
     calle VARCHAR(100) NOT NULL,
@@ -83,7 +100,7 @@ CREATE TABLE Pedido (
     fecha_pedido DATE NOT NULL,
     estado_pedido VARCHAR(30) NOT NULL,
     PRIMARY KEY (id_pedido)
-);
+); 
 
 
 INSERT INTO Inventario (nombre_pan, descripcion, precio, cantidad) VALUES ('Pan de Muerto Tradicional', 'Pan de muerto clásico espolvoreado con azúcar y decorado con huesitos de masa.', 20.00, 30);
@@ -109,6 +126,12 @@ UPDATE Cliente SET fondos = fondos + 100 WHERE id_cliente = 1;
 INSERT INTO Administrador (nombre_admin, password_admin) VALUES ('A', '1234');
 SELECT * FROM Administrador;
 
+SELECT * FROM HistorialCompras;
+
 SELECT * FROM Carrito;
 DELETE FROM Carrito WHERE id_cliente = 1 AND id_pan = 1;
 
+SELECT SUM(I.precio) AS total
+FROM Carrito C
+INNER JOIN Inventario I ON C.id_pan = I.id_pan
+WHERE C.id_cliente = 1;
