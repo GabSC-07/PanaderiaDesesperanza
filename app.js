@@ -236,7 +236,7 @@ app.get('/consultarDinero', autenticarUsuario, (req, res) => {
 });
 
 // Agregar dinero
-app.post('/usuarios/fondos', autenticarUsuario, (req, res) => {
+app.post('/agregarDinero', autenticarUsuario, (req, res) => {
     const userId = req.session.id_cliente; // Usuario autenticado
     const { monto } = req.body;
 
@@ -269,7 +269,7 @@ app.post('/usuarios/fondos', autenticarUsuario, (req, res) => {
 });
 
 // Comprar los productos del carrito
-app.post('/carrito/comprar', async (req, res) => {
+app.post('/comprarCarrito', async (req, res) => {
     try {
         const idCliente = req.session.id_cliente;
         if (!idCliente) {
@@ -378,7 +378,10 @@ app.post('/carrito/comprar', async (req, res) => {
 });
 
 
-app.get('/admin/historial-compras', (req, res) => {
+
+/*****         HISTORIAL DE COMPRAS DEL ADMIN         *****/
+
+app.get('/historialCompras', (req, res) => {
     const { fechaInicio, fechaFin } = req.query;
 
     if (!fechaInicio || !fechaFin) {
@@ -401,12 +404,7 @@ app.get('/admin/historial-compras', (req, res) => {
 
 
 
-
-
-
-
-
-
+/*****         EL INVENTARIO         *****/
 
 // Crear producto
 app.post('/agregarProducto', (req, res) => {
@@ -463,7 +461,6 @@ app.get('/verInventario', (req, res) => {
     });
 });
 
-
 // Borrar producto
 app.post('/borrarProducto', (req, res) => {
     const id = req.body.id;
@@ -480,30 +477,6 @@ app.post('/borrarProducto', (req, res) => {
 });
 
 // Actualizar producto
-/*app.post('/actualizarProducto', (req, res) => {
-    const id = req.body.id_pan;
-    const nombre_pan = req.body.nombre_pan;
-    const descripcion = req.body.descripcion;
-    const precio = req.body.precio;
-    const cantidad = req.body.cantidad;
-
-    con.query(
-        'UPDATE Inventario SET nombre_pan = ?, descripcion = ?, precio = ?, cantidad = ? WHERE id_pan = ?',
-        [nombre_pan, descripcion, precio, cantidad, id],
-        (err, resultado) => {
-            if (err) {
-                console.error("Error al actualizar el producto:", err);
-                return res.status(500).send("Error al actualizar el producto");
-            }
-
-            if (resultado.affectedRows === 0) {
-                return res.status(404).send("Producto no encontrado");
-            }
-
-            return res.send(`Producto con ID ${id} actualizado correctamente`);
-        }
-    );
-});*/
 app.post('/actualizarProducto', (req, res) => {
     const { id_pan, nombre_pan, descripcion, precio, cantidad } = req.body;
 
@@ -527,6 +500,7 @@ app.post('/actualizarProducto', (req, res) => {
 
 
 
+// Ya aqui acabo
 app.listen(3001, () => {
     console.log(`Servidor corriendo en http://localhost:${3001}`)
 })

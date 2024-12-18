@@ -94,7 +94,7 @@
             }
 
             try {
-                const response = await fetch(`/admin/historial-compras?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
+                const response = await fetch(`/historialCompras?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`);
                 const historial = await response.json();
 
                 const tablaHistorial = document.getElementById('tablaHistorial');

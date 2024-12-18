@@ -1,54 +1,65 @@
 <!DOCTYPE html>
 <html lang="es">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="images/icon.png">
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
-    <title>La Desesperanza</title>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<header>
-    <center><img src="images/logo.png" alt="La Desesperanza"></center>
-    <h1><b>¡BIENVENIDO!</b></h1>
-    <a href="signin.html"><button type="button">Iniciar Sesion</button></a>
-    <a href="signup.html"><button type="button">Registrarse</button></a>
-</header>
+        <link rel="shortcut icon" href="images/icon.png">
+        <title>La Desesperanza - Inicio</title>
 
-<body>
-    <center>
-        <table>
-            <tr>
-                <td>
-                    <label class="titles">Inventario de Productos</label><br>
-                    <div id="inventarioContainer">
-                        
-                    </div>
-                    
-                    <!--<button type="button" id="verInventarioButton" class="read">Ver Inventario</button>-->
-                    
-                </td>
-            </tr>
-        </table>
-    </center>
+        <link rel="stylesheet" href="styles/general.css">    
+    </head>
 
+    <header>
+        <center><img src="images/logo.png" alt="La Desesperanza"></center>
+        <h1><b>¡BIENVENIDO!</b></h1>
+        <a href="signin.html"><button type="button">Iniciar Sesion</button></a>
+        <a href="signup.html"><button type="button">Registrarse</button></a>
+        <br><br>
+    </header>
 
+    <body>
+        <center>
+            <table>
+                <tr>
+                    <td>
+                        <label class="titles">Inventario de Productos</label><br>
+                        <div id="inventarioContainer">
 
-    <br><br>
+                        </div>
 
+                    </td>
+                </tr>
+            </table>
+        </center>
+        <br><br>
+    </body>
 
-</body>
+    <footer>
 
-<footer>
-    
-    <div class="fin">
-        <img src="images/pan-cayendo.gif" width="300" height="200">
-        <img src="images/pan-girando.gif" width="300" height="200">
-    </div>
-    <br>
-    <p><b>La Desesperanza 2024 &copy;</b></p>
-</footer>
+        <div class="fin">
+            <img src="images/pan-cayendo.gif" width="300" height="200">
+            <img src="images/pan-girando.gif" width="300" height="200">
+        </div>
+        <br>
+        <p><b>La Desesperanza 2024 &copy;</b></p>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const inventarioContainer = document.getElementById("inventarioContainer");
+
+            try {
+                const response = await fetch("/verInventario");
+                const html = await response.text();
+
+                inventarioContainer.innerHTML = html;
+            } catch (error) {
+                alert("Error al cargar el inventario.");
+                console.error("Error:", error);
+            }
+        });
+    </script>
 
 </html>
